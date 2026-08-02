@@ -1,0 +1,33 @@
+# --- Data & large artifacts (do NOT commit; see README for how to obtain) ---
+data/
+artifacts/
+*.csv
+*.npy
+*.parquet
+
+# --- Model checkpoints / binaries ---
+*.pth
+*.pt
+*.pkl
+*.zip
+*.ckpt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# --- Notebook / editor ---
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+
+# Keep small illustrative images in assets/ (force-add if needed)
+!assets/*.png

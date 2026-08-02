@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mstabvae"
+version = "0.1.0"
+description = "MSTabVAE: a TabNet-based Conditional VAE for synthetic tabular data"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=1.12",
+    "pytorch-tabnet>=4.0",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "lightgbm",
+    "matplotlib",
+    "tqdm",
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

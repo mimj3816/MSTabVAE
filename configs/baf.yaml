@@ -1,0 +1,34 @@
+# MSTabVAE config for the Bank Account Fraud (BAF) dataset.
+# Point `data.csv_path` at your local Base.csv (see README; data is not shipped).
+
+data:
+  csv_path: data/Base.csv
+  target_col: fraud_bool
+  sort_col: month          # chronological split column (set null to ignore)
+  train_size: 0.75
+  shuffle: false           # false = chronological split
+  seed: 42
+
+model:
+  n_d: 8                   # TabNet decision dim (per step)
+  n_steps: 3              # number of TabNet steps
+  z_dim: 4                # VAE latent dim per step
+  cond_embed_dim: 16
+
+train:
+  num_epochs: 100
+  batch_size: 1024
+  lr: 0.001
+  max_beta: 1.0
+  kl_anneal_epochs: 100
+  patience: 5
+  device: cuda            # cuda | cuda:0 | cpu
+  # Optional path to a pretrained TabNetClassifier .zip whose encoder is reused
+  # and frozen (see README). Leave null to train the encoder end-to-end.
+  pretrained_encoder: null
+  ckpt_path: artifacts/mstabvae_baf.pth
+
+generate:
+  balance: true           # true = equal rows per class; false = match real distribution
+  total: null             # if balance=true, total rows to split across classes
+  out_path: artifacts/mstabvae_baf_synthetic.csv
