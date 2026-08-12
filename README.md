@@ -7,15 +7,7 @@ through its own label-conditioned VAE bottleneck and reconstructed by a TabNet
 decoder. Class-conditional rows can then be sampled directly — useful for
 augmenting rare classes.
 
-```
-        x ──► TabNet Encoder ──► [d_1 , d_2 , ... , d_S]        (S = n_steps)
-                                    │                  each step, conditioned on label y:
-                                    ▼
-                         d_i ─► (mu_i, logvar_i) ─► z_i ─► d'_i
-                                    │
-                                    ▼
-                    [d'_1 , ... , d'_S] ──► TabNet Decoder ──► x̂
-```
+
 
 ## Repository layout
 
