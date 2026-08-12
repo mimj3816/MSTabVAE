@@ -1,8 +1,7 @@
 # MSTabVAE
 
 **MSTabVAE** is a **TabNet-based Conditional VAE** for generating synthetic
-tabular data, aimed at imbalanced / fraud-detection settings. A (optionally
-pretrained) TabNet encoder produces per-step decision embeddings; each is passed
+tabular data, aimed at imbalanced / fraud-detection settings. A TabNet encoder produces per-step decision embeddings; each is passed
 through its own label-conditioned VAE bottleneck and reconstructed by a TabNet
 decoder. Class-conditional rows can then be sampled directly — useful for
 augmenting rare classes.
@@ -19,7 +18,7 @@ MSTabVAE/
 │   ├── model.py            # TabNetCVAE, condition embedding, per-step VAE
 │   ├── data.py             # CSV loading, label-encoding, conditional Dataset
 │   ├── losses.py           # Gaussian-NLL + cross-entropy recon + KLD
-│   ├── trainer.py          # training loop (KL annealing + early stopping)
+│   ├── trainer.py          # training loop
 │   ├── generate.py         # class-conditional synthetic-data sampling
 │   └── evaluation/
 │       ├── lightgbm_eval.py  # downstream ML utility (Recall@FPR, AUC-ROC/PR)
