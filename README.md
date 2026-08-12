@@ -7,6 +7,8 @@ through its own label-conditioned VAE bottleneck and reconstructed by a TabNet
 decoder. Class-conditional rows can then be sampled directly — useful for
 augmenting rare classes.
 
+<img width="5137" height="909" alt="mstabvae_fin2" src="https://github.com/user-attachments/assets/87dc8b11-b7fa-46e0-b78e-18b6750bb321" />
+
 
 
 ## Repository layout
