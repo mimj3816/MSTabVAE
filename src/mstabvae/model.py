@@ -92,6 +92,11 @@ class TabNetCVAE(nn.Module):
             n_steps=n_steps, gamma=1.5, n_independent=2, n_shared=2,
             virtual_batch_size=128, momentum=0.02, mask_type="sparsemax",
         )
+        # pytorch-tabnet stores this as a plain tensor attribute, so
+        # nn.Module.to(device) would leave it on the CPU; re-register as buffer.
+        gam = self.encoder.group_attention_matrix
+        del self.encoder.group_attention_matrix
+        self.encoder.register_buffer("group_attention_matrix", gam)
         self.decoder = TabNetDecoder(
             input_dim=input_dim, n_d=n_d, n_steps=n_steps,
             n_independent=2, n_shared=2, virtual_batch_size=128, momentum=0.02,
