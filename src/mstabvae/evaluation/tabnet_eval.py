@@ -1,37 +1,33 @@
-"""Downstream ML-utility evaluation with LightGBM.
+"""Downstream ML-utility evaluation with a TabNet classifier.
 
-Trains a LightGBM classifier on (real or synthetic-augmented) data and reports
+Trains a TabNetClassifier on (real or synthetic-augmented) data and reports
 fraud-detection style metrics on the real test set: Recall@target-FPR, AUC-ROC,
 AUC-PR, plus the ROC / PR curves.
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pytorch_tabnet.tab_model import TabNetClassifier
 from sklearn.metrics import (average_precision_score, confusion_matrix, f1_score,
                              precision_recall_curve, precision_score, recall_score,
                              roc_auc_score, roc_curve)
 
-try:
-    import lightgbm as lgb
-except ImportError:  # pragma: no cover
-    lgb = None
 
-
-def train_and_evaluate_lightgbm(X_train, X_valid, X_test, y_train, y_valid, y_test,
-                                target_fpr=0.01, plot=True):
-    """Train LightGBM and evaluate on the test set.
+def train_and_evaluate_tabnet(X_train, X_valid, X_test, y_train, y_valid, y_test,
+                              cat_idxs=None, cat_dims=None, target_fpr=0.01,
+                              device_name="cuda", seed=42, plot=True):
+    """Train a TabNetClassifier and evaluate on the test set.
 
     Returns ``(model, recall_at_fpr, cm, metrics_dict)``.
     """
-    if lgb is None:
-        raise ImportError("lightgbm is required: pip install lightgbm")
+    model = TabNetClassifier(seed=seed, cat_idxs=cat_idxs or [],
+                             cat_dims=cat_dims or [], device_name=device_name)
+    model.fit(np.asarray(X_train, dtype=float), np.asarray(y_train, dtype=int),
+              eval_set=[(np.asarray(X_valid, dtype=float),
+                         np.asarray(y_valid, dtype=int))],
+              eval_metric=["auc"])
 
-    params = {"objective": "binary", "metric": "binary_logloss"}
-    model = lgb.train(params, lgb.Dataset(X_train, label=y_train),
-                      valid_sets=[lgb.Dataset(X_train, label=y_train),
-                                  lgb.Dataset(X_valid, label=y_valid)])
-
-    y_prob = model.predict(X_test)
+    y_prob = model.predict_proba(np.asarray(X_test, dtype=float))[:, 1]
     fpr, tpr, _ = roc_curve(y_test, y_prob)
     precision_vals, recall_vals, _ = precision_recall_curve(y_test, y_prob)
     recall_at_fpr = tpr[fpr <= target_fpr].max() if np.any(fpr <= target_fpr) else 0.0

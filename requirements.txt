@@ -3,7 +3,6 @@ pytorch-tabnet>=4.0
 numpy
 pandas
 scikit-learn
-lightgbm
 matplotlib
 tqdm
 pyyaml

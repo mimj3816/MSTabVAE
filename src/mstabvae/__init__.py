@@ -7,7 +7,7 @@ Public API
 - ``make_condition_dataset``: build the conditional Dataset.
 - ``train_cvae``            : training loop.
 - ``generate_synthetic``    : class-conditional sampling to a DataFrame.
-- ``evaluation``            : LightGBM utility + DCR privacy metrics.
+- ``evaluation``            : TabNet-classifier utility metrics.
 """
 
 from .model import TabNetCVAE

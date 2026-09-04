@@ -14,7 +14,6 @@ dependencies = [
     "numpy",
     "pandas",
     "scikit-learn",
-    "lightgbm",
     "matplotlib",
     "tqdm",
     "pyyaml",
