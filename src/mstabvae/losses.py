@@ -9,12 +9,12 @@ import torch.nn.functional as F
 
 
 def cvae_loss(x_recon, x, mu_list, logvar_list,
-              continuous_idx, cat_idxs, cat_dims, sigma_list):
+              continuous_idx, cat_idxs, cat_dims, sigma_list, cat_logits):
     """Return ``(recon_loss, kld)`` averaged over the batch.
 
     - continuous columns: Gaussian negative log-likelihood with a learned,
       per-column sigma (``softplus``-parameterised).
-    - categorical columns: cross-entropy over the reconstructed logits slice.
+    - categorical columns: cross-entropy over the per-column head logits.
     - KLD: standard VAE term summed over all steps, per-sample.
     """
     B = x.size(0)
@@ -26,9 +26,9 @@ def cvae_loss(x_recon, x, mu_list, logvar_list,
         recon_loss += (((x[:, idx] - x_recon[:, idx]) ** 2) / (2 * var)
                        + 0.5 * torch.log(2 * math.pi * var)).sum()
 
-    for idx, dim in zip(cat_idxs, cat_dims):
-        pred_logits = x_recon[:, idx:idx + dim]
-        recon_loss += F.cross_entropy(pred_logits, x[:, idx].long(), reduction="sum")
+    for i, idx in enumerate(cat_idxs):
+        recon_loss += F.cross_entropy(cat_logits[i], x[:, idx].long(),
+                                      reduction="sum")
 
     mu_all = torch.stack(mu_list)
     logvar_all = torch.stack(logvar_list)

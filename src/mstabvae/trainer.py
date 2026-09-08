@@ -1,5 +1,8 @@
 """Training loop for MSTabVAE (KL annealing + early stopping)."""
 
+import random
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -8,9 +11,20 @@ from .data import collate_fn_cond
 from .losses import cvae_loss
 
 
+def set_seed(seed):
+    """Seed python/numpy/torch so a run is reproducible."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
+
 def train_cvae(model, train_ds, valid_ds, data_bundle, device,
                num_epochs=100, batch_size=1024, lr=1e-3,
-               max_beta=1.0, kl_anneal_epochs=100, patience=5,
+               max_beta=1.0, kl_anneal_epochs=100, patience=10,
                ckpt_path="mstabvae.pth"):
     """Fit ``model`` and checkpoint the best (lowest validation loss) weights."""
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
@@ -33,9 +47,9 @@ def train_cvae(model, train_ds, valid_ds, data_bundle, device,
         for x_batch, cond_batch in tqdm(train_loader, desc=f"Epoch {epoch}", leave=False):
             x_batch = x_batch.to(device)
             cond_batch = {k: v.to(device) for k, v in cond_batch.items()}
-            x_recon, mu_list, logvar_list, _, _ = model(x_batch, cond_batch)
+            x_recon, mu_list, logvar_list, cat_logits = model(x_batch, cond_batch)
             recon, kld = cvae_loss(x_recon, x_batch, mu_list, logvar_list,
-                                   cont, cat_i, cat_d, model.sigma_list)
+                                   cont, cat_i, cat_d, model.sigma_list, cat_logits)
             loss = recon + beta * kld
             optimizer.zero_grad()
             loss.backward()
@@ -69,8 +83,8 @@ def _evaluate(model, loader, ds, cont, cat_i, cat_d, beta, device):
     for x_batch, cond_batch in loader:
         x_batch = x_batch.to(device)
         cond_batch = {k: v.to(device) for k, v in cond_batch.items()}
-        x_recon, mu_list, logvar_list, _, _ = model(x_batch, cond_batch)
+        x_recon, mu_list, logvar_list, cat_logits = model(x_batch, cond_batch)
         recon, kld = cvae_loss(x_recon, x_batch, mu_list, logvar_list,
-                               cont, cat_i, cat_d, model.sigma_list)
+                               cont, cat_i, cat_d, model.sigma_list, cat_logits)
         total += (recon + beta * kld).item() * x_batch.size(0)
     return total / len(ds)
