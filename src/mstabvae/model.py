@@ -82,7 +82,7 @@ class ZToDDecoder(nn.Module):
 
 class TabNetCVAE(nn.Module):
     def __init__(self, input_dim, n_d, n_steps, z_dim, condition_info,
-                 num_continuous=0, cond_embed_dim=16):
+                 num_continuous=0, cond_embed_dim=8, cat_dims=None):
         super().__init__()
         self.n_steps = n_steps
         self.z_dim = z_dim
@@ -107,6 +107,10 @@ class TabNetCVAE(nn.Module):
             [DToZEncoder(n_d, z_dim, cond_dim) for _ in range(n_steps)])
         self.z_to_d = nn.ModuleList(
             [ZToDDecoder(z_dim, n_d, cond_dim) for _ in range(n_steps)])
+        # One classification head per categorical column, applied to each step's
+        # d'_i; the per-step logits are averaged before the loss sees them.
+        self.cat_dims = cat_dims or []
+        self.cat_heads = nn.ModuleList([nn.Linear(n_d, dim) for dim in self.cat_dims])
         self.sigma_list = nn.ParameterList(
             [nn.Parameter(torch.ones(1)) for _ in range(num_continuous)])
 
@@ -117,7 +121,7 @@ class TabNetCVAE(nn.Module):
     def forward(self, x, cond_dict):
         steps_output, _ = self.encoder(x)
         cond_vec = self.cond_embedding(cond_dict)
-        mu_list, logvar_list, d_prime_list = [], [], []
+        mu_list, logvar_list, d_prime_list, step_cat_logits = [], [], [], []
         for i, d in enumerate(steps_output):
             mu, logvar = self.d_to_z_encoders[i](d, cond_vec)
             std = torch.exp(0.5 * logvar)
@@ -126,8 +130,11 @@ class TabNetCVAE(nn.Module):
             mu_list.append(mu)
             logvar_list.append(logvar)
             d_prime_list.append(d_prime)
+            step_cat_logits.append([head(d_prime) for head in self.cat_heads])
+        cat_logits = [torch.stack([step[j] for step in step_cat_logits]).mean(dim=0)
+                      for j in range(len(self.cat_heads))]
         x_recon = self.decoder(d_prime_list)
-        return x_recon, mu_list, logvar_list, steps_output, d_prime_list
+        return x_recon, mu_list, logvar_list, cat_logits
 
     @torch.no_grad()
     def generate_from_condition(self, cond_dict, n_samples=100):

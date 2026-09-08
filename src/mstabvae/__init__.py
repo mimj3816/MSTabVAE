@@ -13,11 +13,12 @@ Public API
 from .model import TabNetCVAE
 from .data import load_tabular, make_condition_dataset, TableWithConditions, collate_fn_cond
 from .losses import cvae_loss
-from .trainer import train_cvae
+from .trainer import set_seed, train_cvae
 from .generate import generate_synthetic, class_counts_from_bundle
 
 __all__ = [
     "TabNetCVAE", "load_tabular", "make_condition_dataset", "TableWithConditions",
-    "collate_fn_cond", "cvae_loss", "train_cvae", "generate_synthetic",
+    "collate_fn_cond", "cvae_loss", "set_seed",
+    "train_cvae", "generate_synthetic",
     "class_counts_from_bundle",
 ]

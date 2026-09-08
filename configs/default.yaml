@@ -1,0 +1,30 @@
+# MSTabVAE config for the UCI "default of credit card clients" dataset.
+# Mirrors prep_default() / default.ipynb from the reference implementation.
+
+data:
+  # The pre-saved split the reference results were produced from; re-splitting
+  # default.csv gives a different test set (only 485 of 3750 rows overlap).
+  splits_dir: data/default
+  target_col: default payment next month
+  seed: 42
+  int_cols: auto           # every integer-dtype column of the raw table
+
+model:
+  n_d: 8
+  n_steps: 3
+  z_dim: 4
+  cond_embed_dim: 8
+
+train:
+  num_epochs: 100
+  batch_size: 1024
+  lr: 0.001
+  max_beta: 1.0
+  kl_anneal_epochs: 100
+  patience: 10
+  device: cuda
+  pretrained_encoder: null
+  ckpt_path: artifacts/mstabvae_default.pth
+
+generate:
+  out_path: artifacts/mstabvae_default_synthetic.csv
