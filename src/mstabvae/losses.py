@@ -20,17 +20,20 @@ def cvae_loss(x_recon, x, mu_list, logvar_list,
     B = x.size(0)
     recon_loss = 0.0
 
+    # Per-column batch means, written exactly as the reference implementation:
+    # the float op order matters for bit-for-bit reproducible training.
     for i, idx in enumerate(continuous_idx):
         std = F.softplus(sigma_list[i]) + 1e-3
         var = std ** 2
-        recon_loss += (((x[:, idx] - x_recon[:, idx]) ** 2) / (2 * var)
-                       + 0.5 * torch.log(2 * math.pi * var)).sum()
+        recon_loss += (0.5 * torch.log(torch.tensor(2 * math.pi, device=std.device))
+                       + torch.log(std)
+                       + ((x[:, idx] - x_recon[:, idx]) ** 2) / (2 * var)).mean()
 
     for i, idx in enumerate(cat_idxs):
         recon_loss += F.cross_entropy(cat_logits[i], x[:, idx].long(),
-                                      reduction="sum")
+                                      reduction="mean")
 
     mu_all = torch.stack(mu_list)
     logvar_all = torch.stack(logvar_list)
     kld = -0.5 * torch.sum(1 + logvar_all - mu_all.pow(2) - logvar_all.exp()) / B
-    return recon_loss / B, kld
+    return recon_loss, kld
