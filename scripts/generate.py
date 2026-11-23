@@ -20,10 +20,11 @@ def main():
     ap = argparse.ArgumentParser(description="Generate synthetic data with MSTabVAE")
     ap.add_argument("--config", default="configs/default.yaml")
     ap.add_argument("--device", default=None)
-    ap.add_argument("--seed", type=int, default=0, help="run seed (latent sampling)")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="latent-sampling seed; by default continue the RNG state "
+                         "saved by train.py (falls back to 0)")
     args = ap.parse_args()
 
-    set_seed(args.seed)
     cfg = load_config(args.config)
     dcfg, mcfg, tcfg, gcfg = cfg["data"], cfg["model"], cfg["train"], cfg["generate"]
     device = args.device or tcfg["device"]
@@ -44,6 +45,16 @@ def main():
         num_continuous=len(bundle.continuous_idx), cat_dims=bundle.cat_dims,
     ).to(device)
     model.load_state_dict(torch.load(tcfg["ckpt_path"], map_location=device))
+
+    rng_path = _pl.Path(f"{tcfg['ckpt_path']}.rng")
+    if args.seed is None and rng_path.exists():
+        rng = torch.load(rng_path)
+        torch.set_rng_state(rng["cpu"])
+        if "cuda" in rng and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all(rng["cuda"])
+        print(f"[generate] RNG state restored from {rng_path}")
+    else:
+        set_seed(0 if args.seed is None else args.seed)
 
     n_per_class = class_counts_from_bundle(bundle)
     print(f"[generate] n_per_class={n_per_class}")

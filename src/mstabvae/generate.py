@@ -11,10 +11,12 @@ import torch
 
 
 @torch.no_grad()
-def generate_synthetic(model, data_bundle, device, n_per_class):
+def generate_synthetic(model, data_bundle, device, n_per_class, batch_size=4096):
     """Return a synthetic DataFrame with the dataset's original columns.
 
     ``n_per_class`` maps an (encoded) target class -> number of rows to draw.
+    Rows are drawn ``batch_size`` at a time, which fixes the order the latents
+    are sampled in (matches the reference implementation).
     """
     model.eval()
     feat = data_bundle.feature_names
@@ -24,8 +26,14 @@ def generate_synthetic(model, data_bundle, device, n_per_class):
     for cls, n in n_per_class.items():
         if n <= 0:
             continue
-        cond = {target_col: torch.full((n,), int(cls), dtype=torch.long, device=device)}
-        x_gen = model.generate_from_condition(cond, n_samples=n).cpu().numpy()
+        # Every batch -- the last one included -- is a full ``k`` rows and the
+        # surplus is cut off, as in the reference (keeps the GPU kernels, and
+        # so the float results, identical).
+        k = min(batch_size, n)
+        cond = {target_col: torch.full((k,), int(cls), dtype=torch.long, device=device)}
+        chunks = [model.generate_from_condition(cond, n_samples=k).cpu()
+                  for _ in range(0, n, k)]
+        x_gen = torch.cat(chunks)[:n].numpy()
         df = pd.DataFrame(x_gen, columns=feat)
 
         for col in data_bundle.int_cols:

@@ -51,7 +51,10 @@ def main():
     X_te, y_te = bundle.splits["test"]
 
     print("\n===== ML utility: TabNet trained on REAL =====")
-    train_and_evaluate_tabnet(X_tr, X_va, X_te, y_tr, y_va, y_te,
+    # Shuffled the same way as the augmented run below (reference protocol).
+    X_real = X_tr.sample(frac=1, random_state=dcfg["seed"])
+    y_real = y_tr.loc[X_real.index]
+    train_and_evaluate_tabnet(X_real, X_va, X_te, y_real, y_va, y_te,
                               cat_idxs=bundle.cat_idxs, cat_dims=bundle.cat_dims,
                               target_fpr=args.target_fpr, device_name=args.device,
                               plot=not args.no_plot)

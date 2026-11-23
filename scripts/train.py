@@ -68,6 +68,13 @@ def main():
         patience=tcfg["patience"], ckpt_path=ckpt)
     print(f"[done] best checkpoint -> {ckpt}")
 
+    # The reference implementation samples right after training in the same
+    # process; hand the RNG state to generate.py so it draws the same latents.
+    rng = {"cpu": torch.get_rng_state()}
+    if torch.cuda.is_available():
+        rng["cuda"] = torch.cuda.get_rng_state_all()
+    torch.save(rng, f"{ckpt}.rng")
+
 
 if __name__ == "__main__":
     main()
